@@ -191,28 +191,26 @@ public partial class MainWindow : Window
     {
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
-            Point mousePos = e.GetPosition(canvas);
-
             if (e.Delta > 0)
-                ZoomIn(mousePos);
+                ZoomIn();
             else
-                ZoomOut(mousePos);
+                ZoomOut();
 
             e.Handled = true;
         }
     }
 
-    private void ZoomIn(Point center)
+    private void ZoomIn()
     {
-        AdjustZoom(ZoomSpeed, center);
+        AdjustZoom(ZoomSpeed);
     }
 
-    private void ZoomOut(Point center)
+    private void ZoomOut()
     {
-        AdjustZoom(1 / ZoomSpeed, center);
+        AdjustZoom(1 / ZoomSpeed);
     }
 
-    private void AdjustZoom(double factor, Point center)
+    private void AdjustZoom(double factor)
     {
         double newZoom = _currentZoom * factor;
 
@@ -231,14 +229,12 @@ public partial class MainWindow : Window
 
     private void ZoomInButton_Click(object sender, RoutedEventArgs e)
     {
-        Point center = new(canvas.ActualWidth / 2, canvas.ActualHeight / 2);
-        ZoomIn(center);
+        ZoomIn();
     }
 
     private void ZoomOutButton_Click(object sender, RoutedEventArgs e)
     {
-        Point center = new(canvas.ActualWidth / 2, canvas.ActualHeight / 2);
-        ZoomOut(center);
+        ZoomOut();
     }
 
     private void ResetZoomButton_Click(object sender, RoutedEventArgs e)
@@ -345,7 +341,7 @@ public partial class MainWindow : Window
         canvas.Children.Add(centerCircle);
     }
 
-    private void CalculateVisibilty()
+    private void CalculateVisibility()
     {
         RemoveViews();
 
@@ -403,14 +399,14 @@ public partial class MainWindow : Window
             _visibilityRange
         );
 
-        (var visblePolygons, var fovPolygon) = _spatialIndex.QueryFOV(
+        (var visiblePolygons, var fovPolygon) = _spatialIndex.QueryFOV(
             _center,
             _frustumFOVAngle,
             _frustumDirection,
             _visibilityRange
         );
 
-        var filteredPolygons = FrustumCuller.GetVisiblePolygons(visblePolygons, frustum);
+        var filteredPolygons = FrustumCuller.GetVisiblePolygons(visiblePolygons, frustum);
 
         _frustumPolygons.Clear();
 
@@ -461,17 +457,17 @@ public partial class MainWindow : Window
             {
                 CalculateFrustum();
 
-                Console.WriteLine($"Polygon point count {_visibilityPolygon?.Points.Count}");
+                Console.WriteLine($"Polygon point count {_frustumPolygon?.Points.Count}");
             }, nameof(CalculateFrustum));
         }
         else
         {
             TimingHelper.Time(() =>
             {
-                CalculateVisibilty();
+                CalculateVisibility();
 
                 Console.WriteLine($"Polygon point count {_visibilityPolygon?.Points.Count}");
-            }, nameof(CalculateVisibilty));
+            }, nameof(CalculateVisibility));
         }
     }
 }
