@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Attributes;
 using VisibilityIn2DGrid.Culling;
 using VisibilityIn2DGrid.Extensions;
 using VisibilityIn2DGrid.Helper;
