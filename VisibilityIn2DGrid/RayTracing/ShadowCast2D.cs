@@ -98,7 +98,7 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
         return new Polygon
         {
             Points = points,
-            Fill = new SolidColorBrush(Color.FromArgb(128, 255, 255, 0)),
+            Fill = new SolidColorBrush(Color.FromArgb(90, 255, 255, 0)),
             Stroke = new SolidColorBrush(Colors.Yellow),
             StrokeThickness = 2
         };

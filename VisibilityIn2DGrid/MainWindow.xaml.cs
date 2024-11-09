@@ -42,7 +42,12 @@ public partial class MainWindow : Window
     private Polygon? _visibilityPolygon;
 
     private Polygon? _frustumPolygon;
-    private List<(Polygon, Brush)> _frustumPolygons = [];
+    private readonly List<(Polygon, Brush)> _frustumPolygons = [];
+
+    private readonly List<(Polygon, Brush)> _occlusionPolygons = [];
+    private Polygon? _occlusionPolygon;
+
+    private readonly OcclusionCuller _occlusionCuller = new();
 
     private float _frustumFOVAngle = 90.0f;
     private float _frustumDirection = 0.0f;
@@ -51,6 +56,9 @@ public partial class MainWindow : Window
 
     private DateTime lastClickTime = DateTime.MinValue;
     private const double DoubleClickTimeMs = 300;
+
+    private readonly List<Line> _visualizationRays = new();
+    private bool _showRays = false;
 
     private readonly Ellipse centerCircle = new()
     {
@@ -83,7 +91,7 @@ public partial class MainWindow : Window
         if (!canvas.IsMouseOverCanvasContent(_scrollViewer))
             return;
 
-        if (fcRB.IsChecked == true)
+        if (fcRB.IsChecked == true || ocRB.IsChecked == true)
         {
             bool reload = false;
 
@@ -124,6 +132,12 @@ public partial class MainWindow : Window
         }
 
         e.Handled = true;
+    }
+
+    private void ShowRaysToggle_Checked(object sender, RoutedEventArgs e)
+    {
+        _showRays = ShowRaysToggle.IsChecked ?? false;
+        ExecuteAlgorithm();
     }
 
     private void UpdateMousePosition(object sender, MouseEventArgs e)
@@ -413,16 +427,82 @@ public partial class MainWindow : Window
         {
             _frustumPolygons.Add((visiblePolygon, visiblePolygon.Fill));
 
-            visiblePolygon.Fill = Brushes.Green;
+            visiblePolygon.Fill = Brushes.Black;
         }
 
-        fovPolygon.Fill = new SolidColorBrush(Color.FromArgb(128, 255, 255, 0));
+        fovPolygon.Fill = new SolidColorBrush(Color.FromArgb(90, 255, 255, 0));
         fovPolygon.Stroke = new SolidColorBrush(Colors.Yellow);
         fovPolygon.StrokeThickness = 2;
 
         _frustumPolygon = fovPolygon;
 
         canvas.Children.Add(_frustumPolygon);
+    }
+
+    private void CalculateOcclusion()
+    {
+        RemoveViews();
+
+        var potentialPolygons = _spatialIndex?.QueryBounds(
+            _center,
+            _visibilityRange
+        )?.ToList() ?? [];
+
+        var (visiblePolygons, viewArea, rays) = _occlusionCuller.CalculateVisibility(
+            _center,
+            _frustumFOVAngle,
+            _frustumDirection,
+            _visibilityRange,
+            potentialPolygons
+        );
+
+        _occlusionPolygons.Clear();
+
+        foreach (var visiblePolygon in visiblePolygons)
+        {
+            _occlusionPolygons.Add((visiblePolygon, visiblePolygon.Fill));
+            visiblePolygon.Fill = Brushes.Black;
+        }
+
+        _occlusionPolygon = viewArea;
+        canvas.Children.Add(_occlusionPolygon);
+
+        if (_showRays)
+        {
+            foreach (var ray in rays)
+            {
+                var line = new Line
+                {
+                    X1 = ray.Start.X,
+                    Y1 = ray.Start.Y,
+                    X2 = ray.End.X,
+                    Y2 = ray.End.Y,
+                    Stroke = ray.IsBlocked ? Brushes.Red : Brushes.Green,
+                    StrokeThickness = 1,
+                    Opacity = 0.5
+                };
+                _visualizationRays.Add(line);
+                canvas.Children.Add(line);
+            }
+        }
+    }
+
+    private List<Point> GenerateVisibilityAreaPoints()
+    {
+        var points = new List<Point>();
+        int segments = 360;
+        double angleStep = (2 * Math.PI) / segments;
+
+        for (int i = 0; i <= segments; i++)
+        {
+            double angle = i * angleStep;
+            points.Add(new Point(
+                _center.X + _visibilityRange * Math.Cos(angle),
+                _center.Y + _visibilityRange * Math.Sin(angle)
+            ));
+        }
+
+        return points;
     }
 
     private void RemoveViews()
@@ -437,10 +517,26 @@ public partial class MainWindow : Window
             canvas.Children.Remove(_frustumPolygon);
         }
 
+        if (_occlusionPolygon is not null)
+        {
+            canvas.Children.Remove(_occlusionPolygon);
+        }
+
         foreach (var visiblePolygon in _frustumPolygons)
         {
             visiblePolygon.Item1.Fill = visiblePolygon.Item2;
         }
+
+        foreach (var visiblePolygon in _occlusionPolygons)
+        {
+            visiblePolygon.Item1.Fill = visiblePolygon.Item2;
+        }
+
+        foreach (var ray in _visualizationRays)
+        {
+            canvas.Children.Remove(ray);
+        }
+        _visualizationRays.Clear();
     }
 
     private void RadioButton_Click(object sender, RoutedEventArgs e)
@@ -458,6 +554,14 @@ public partial class MainWindow : Window
 
                 Console.WriteLine($"Polygon point count {_frustumPolygon?.Points.Count}");
             }, nameof(CalculateFrustum));
+        }
+        else if (ocRB.IsChecked == true)
+        {
+            TimingHelper.Time(() =>
+            {
+                CalculateOcclusion();
+                Console.WriteLine($"Polygon point count {_occlusionPolygon?.Points.Count}");
+            }, nameof(CalculateOcclusion));
         }
         else
         {

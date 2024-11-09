@@ -9,6 +9,93 @@
     Width="1920"
     Height="1080"
     mc:Ignorable="d">
+
+    <Window.Resources>
+        <Style x:Key="ButtonFocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle
+                            Margin="2"
+                            SnapsToDevicePixels="true"
+                            Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                            StrokeDashArray="1 2"
+                            StrokeThickness="1" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <LinearGradientBrush x:Key="ButtonNormalBackground" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#F3F3F3" />
+            <GradientStop Offset="0.5" Color="#EBEBEB" />
+            <GradientStop Offset="0.5" Color="#DDDDDD" />
+            <GradientStop Offset="1" Color="#CDCDCD" />
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="ButtonNormalBorder" Color="#FF707070" />
+        <Style x:Key="ToggleButtonStyle1" TargetType="{x:Type ToggleButton}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource ButtonFocusVisual}" />
+            <Setter Property="Background" Value="{StaticResource ButtonNormalBackground}" />
+            <Setter Property="BorderBrush" Value="{StaticResource ButtonNormalBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <ContentPresenter
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                RecognizesAccessKey="True"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            <Border
+                                x:Name="on"
+                                Width="25"
+                                Height="25"
+                                Margin="10,0,0,0"
+                                Background="LightGray"
+                                CornerRadius="2,0,0,4">
+                                <TextBlock
+                                    x:Name="onText"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Text="On" />
+                            </Border>
+                            <Border
+                                x:Name="off"
+                                Width="25"
+                                Height="25"
+                                Background="LightGray"
+                                CornerRadius="0,2,4,0">
+                                <TextBlock
+                                    x:Name="offText"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Text="Off" />
+                            </Border>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="#ADADAD" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="true">
+                                <Setter TargetName="on" Property="Background" Value="LightBlue" />
+                                <Setter TargetName="onText" Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="off" Property="Background" Value="LightBlue" />
+                                <Setter TargetName="offText" Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -57,15 +144,22 @@
                 <RadioButton
                     x:Name="shadowCastRB"
                     Click="RadioButton_Click"
+                    GroupName="ViewMode"
                     IsChecked="True">
                     ShadowCast2D
                 </RadioButton>
                 <RadioButton
                     x:Name="fcRB"
-                    Margin="5,0,0,0"
-                    Click="RadioButton_Click">
+                    Margin="5,0,5,0"
+                    Click="RadioButton_Click"
+                    GroupName="ViewMode">
                     Frustrum Culling
                 </RadioButton>
+                <RadioButton
+                    Name="ocRB"
+                    Click="RadioButton_Click"
+                    Content="Occlusion Culling"
+                    GroupName="ViewMode" />
             </StackPanel>
             <Button
                 Width="100"
@@ -74,6 +168,15 @@
                 Click="Button_Click">
                 Refresh
             </Button>
+
+            <ToggleButton
+                x:Name="ShowRaysToggle"
+                Width="Auto"
+                Margin="5"
+                Checked="ShowRaysToggle_Checked"
+                Content="Show Rays"
+                Style="{StaticResource ToggleButtonStyle1}"
+                Unchecked="ShowRaysToggle_Checked" />
 
         </StackPanel>
 
