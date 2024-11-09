@@ -17,7 +17,7 @@ public static class GridLineGenerator
 
         for (double x = 0; x <= width; x += GridSize)
         {
-            var line = new Line
+            Line line = new()
             {
                 X1 = x,
                 Y1 = 0,
@@ -31,7 +31,7 @@ public static class GridLineGenerator
 
         for (double y = 0; y <= height; y += GridSize)
         {
-            var line = new Line
+            Line line = new()
             {
                 X1 = 0,
                 Y1 = y,
@@ -48,9 +48,9 @@ public static class GridLineGenerator
 
     private static void AddToCanvas(Canvas canvas)
     {
-        foreach (var line in gridLines)
+        foreach (Line line in gridLines)
         {
-            canvas.Children.Add(line);
+            _ = canvas.Children.Add(line);
         }
     }
 }

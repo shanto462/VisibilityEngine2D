@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using VisibilityIn2DGrid.Enums;
 
 namespace VisibilityIn2DGrid.Helper.UI;

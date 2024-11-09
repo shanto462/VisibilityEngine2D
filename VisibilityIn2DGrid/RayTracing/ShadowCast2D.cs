@@ -45,9 +45,11 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
     public void AddPolygon(Polygon polygon)
     {
         if (polygon.Points.Count < 3)
+        {
             return;
+        }
 
-        _polygons.Add(polygon);
+        _ = _polygons.Add(polygon);
 
         for (int i = 0; i < polygon.Points.Count; i++)
         {
@@ -71,12 +73,12 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
             };
         }
 
-        var rayHits = new List<RayHit>();
+        List<RayHit> rayHits = [];
 
-        Parallel.For(0, RayCount, (i) =>
+        _ = Parallel.For(0, RayCount, (i) =>
         {
-            double angle = (i * 2 * Math.PI) / RayCount;
-            var ray = new Ray(_origin, angle, _radius);
+            double angle = i * 2 * Math.PI / RayCount;
+            Ray ray = new(_origin, angle, _radius);
 
             RayHit hit = CastRay(ray);
 
@@ -88,9 +90,9 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
 
         rayHits = [.. rayHits.OrderBy(h => h.Angle)];
 
-        var points = new PointCollection();
+        PointCollection points = [];
 
-        foreach (var hit in rayHits)
+        foreach (RayHit hit in rayHits)
         {
             points.Add(hit.HitPoint);
         }
@@ -106,20 +108,22 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
 
     private bool IsPointInAnyPolygon(Point point)
     {
-        foreach (var polygon in _polygons)
+        foreach (Polygon polygon in _polygons)
         {
             if (polygon.ContainsPoint(point))
+            {
                 return true;
+            }
         }
         return false;
     }
 
     private RayHit CastRay(Ray ray)
     {
-        RayHit closestHit = null;
+        RayHit? closestHit = null;
         double closestDistance = double.MaxValue;
 
-        foreach (var segment in _segments)
+        foreach (LineSegment segment in _segments)
         {
             if (TryGetIntersection(ray, segment, out Point intersection))
             {
@@ -134,9 +138,9 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
 
         if (closestHit == null)
         {
-            var endPoint = new Point(
-                _origin.X + ray.Direction.X * ray.Distance,
-                _origin.Y + ray.Direction.Y * ray.Distance
+            Point endPoint = new(
+                _origin.X + (ray.Direction.X * ray.Distance),
+                _origin.Y + (ray.Direction.Y * ray.Distance)
             );
             closestHit = new RayHit(endPoint, ray.Distance, ray.Angle);
         }
@@ -149,26 +153,28 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
         intersection = new Point();
 
         Point p3 = ray.Origin;
-        var p4 = new Point(
-            ray.Origin.X + ray.Direction.X * ray.Distance,
-            ray.Origin.Y + ray.Direction.Y * ray.Distance
+        Point p4 = new(
+            ray.Origin.X + (ray.Direction.X * ray.Distance),
+            ray.Origin.Y + (ray.Direction.Y * ray.Distance)
         );
 
         Point p1 = segment.Start;
         Point p2 = segment.End;
 
-        double denominator = (p1.X - p2.X) * (p3.Y - p4.Y) - (p1.Y - p2.Y) * (p3.X - p4.X);
+        double denominator = ((p1.X - p2.X) * (p3.Y - p4.Y)) - ((p1.Y - p2.Y) * (p3.X - p4.X));
 
         if (Math.Abs(denominator) < 0.000001)
+        {
             return false;
+        }
 
-        double t = ((p1.X - p3.X) * (p3.Y - p4.Y) - (p1.Y - p3.Y) * (p3.X - p4.X)) / denominator;
-        double u = -((p1.X - p2.X) * (p1.Y - p3.Y) - (p1.Y - p2.Y) * (p1.X - p3.X)) / denominator;
+        double t = (((p1.X - p3.X) * (p3.Y - p4.Y)) - ((p1.Y - p3.Y) * (p3.X - p4.X))) / denominator;
+        double u = -(((p1.X - p2.X) * (p1.Y - p3.Y)) - ((p1.Y - p2.Y) * (p1.X - p3.X))) / denominator;
 
         if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
         {
-            intersection.X = p1.X + t * (p2.X - p1.X);
-            intersection.Y = p1.Y + t * (p2.Y - p1.Y);
+            intersection.X = p1.X + (t * (p2.X - p1.X));
+            intersection.Y = p1.Y + (t * (p2.Y - p1.Y));
             return true;
         }
 
@@ -180,7 +186,7 @@ public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDi
     {
         double dx = p2.X - p1.X;
         double dy = p2.Y - p1.Y;
-        return Math.Sqrt(dx * dx + dy * dy);
+        return Math.Sqrt((dx * dx) + (dy * dy));
     }
 
     private void Clear()

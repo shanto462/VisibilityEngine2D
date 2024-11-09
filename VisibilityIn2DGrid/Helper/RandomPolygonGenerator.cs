@@ -29,11 +29,11 @@ public static class RandomPolygonGenerator
 
         double radius = Random.Shared.Next(5, 60);
 
-        var points = new List<Point>();
+        List<Point> points = [];
 
         for (int i = 0; i < pointCount; i++)
         {
-            double angle = (Math.PI * 2 * i) / pointCount;
+            double angle = Math.PI * 2 * i / pointCount;
 
             double pointRadius = radius * (0.5 + Random.Shared.NextDouble());
 
@@ -43,7 +43,7 @@ public static class RandomPolygonGenerator
             points.Add(new Point(x, y));
         }
 
-        var polygon = new Polygon
+        Polygon polygon = new()
         {
             Points = new PointCollection(points),
             Fill = GetRandomBrush(),
@@ -68,11 +68,11 @@ public static class RandomPolygonGenerator
         return polygon;
     }
 
-    private readonly static Dictionary<Color, SolidColorBrush> colorToBrush = [];
+    private static readonly Dictionary<Color, SolidColorBrush> colorToBrush = [];
 
     private static SolidColorBrush GetRandomBrush()
     {
-        var color = GetRandomColor();
+        Color color = GetRandomColor();
 
         if (colorToBrush.TryGetValue(color, out SolidColorBrush? value))
         {
@@ -80,7 +80,7 @@ public static class RandomPolygonGenerator
         }
         else
         {
-            var brush = new SolidColorBrush(color);
+            SolidColorBrush brush = new(color);
             colorToBrush.Add(color, brush);
             return brush;
         }

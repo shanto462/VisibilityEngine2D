@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Windows.Shapes;
 using VisibilityIn2DGrid.Helper.UI.Constants;
 using VisibilityIn2DGrid.Index;
@@ -36,7 +31,7 @@ public class CanvasManager
 
     public void ClearObstacles()
     {
-        foreach (var child in _obstacles)
+        foreach (Polygon child in _obstacles)
         {
             _canvas.Children.Remove(child);
         }
@@ -49,11 +44,11 @@ public class CanvasManager
 
         for (int i = 0; i < count; i++)
         {
-            var polygon = RandomPolygonGenerator.GenerateRandomPolygon(
+            Polygon polygon = RandomPolygonGenerator.GenerateRandomPolygon(
                 ViewConstants.CanvasWidth, ViewConstants.CanvasHeight);
 
             _obstacles.Add(polygon);
-            _canvas.Children.Add(polygon);
+            _ = _canvas.Children.Add(polygon);
         }
     }
 
@@ -65,7 +60,7 @@ public class CanvasManager
             (float)ViewConstants.CanvasHeight,
             ViewConstants.GridSize);
 
-        foreach (var obstacle in _obstacles)
+        foreach (Polygon obstacle in _obstacles)
         {
             _spatialIndex.Insert(obstacle);
         }
@@ -73,7 +68,10 @@ public class CanvasManager
 
     public void CenterCanvas()
     {
-        if (_scrollViewer == null) return;
+        if (_scrollViewer == null)
+        {
+            return;
+        }
 
         double horizontalOffset = (ViewConstants.CanvasWidth - _scrollViewer.ViewportWidth) / 2;
         double verticalOffset = (ViewConstants.CanvasHeight - _scrollViewer.ViewportHeight) / 2;
@@ -84,7 +82,7 @@ public class CanvasManager
 
     public void ClearVisualizationRays()
     {
-        foreach (var ray in _visualizationRays)
+        foreach (Line ray in _visualizationRays)
         {
             _canvas.Children.Remove(ray);
         }
@@ -94,9 +92,16 @@ public class CanvasManager
     public void AddVisualizationRay(Line ray)
     {
         _visualizationRays.Add(ray);
-        _canvas.Children.Add(ray);
+        _ = _canvas.Children.Add(ray);
     }
 
-    public SpatialIndex? GetSpatialIndex() => _spatialIndex;
-    public List<Polygon> GetObstacles() => _obstacles;
+    public SpatialIndex? GetSpatialIndex()
+    {
+        return _spatialIndex;
+    }
+
+    public List<Polygon> GetObstacles()
+    {
+        return _obstacles;
+    }
 }

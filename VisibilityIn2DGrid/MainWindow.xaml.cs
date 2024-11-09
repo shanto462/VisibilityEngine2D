@@ -3,15 +3,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Culling;
-using VisibilityIn2DGrid.Extensions;
-using VisibilityIn2DGrid.Helper;
-using VisibilityIn2DGrid.Helper.UI.Controllers;
-using VisibilityIn2DGrid.Helper.UI;
-using VisibilityIn2DGrid.Index;
-using VisibilityIn2DGrid.RayTracing;
-using VisibilityIn2DGrid.Helper.UI.Constants;
 using VisibilityIn2DGrid.Enums;
+using VisibilityIn2DGrid.Extensions;
+using VisibilityIn2DGrid.Helper.UI;
+using VisibilityIn2DGrid.Helper.UI.Constants;
+using VisibilityIn2DGrid.Helper.UI.Controllers;
 
 namespace VisibilityIn2DGrid;
 
@@ -51,15 +47,17 @@ public partial class MainWindow : Window
         canvas.MouseMove += Canvas_MouseMove;
         canvas.MouseMove += UpdateMousePosition;
 
-        this.KeyDown += MainWindow_KeyDown;
-        this.Loaded += MainWindow_Loaded;
-        this.SizeChanged += MainWindow_SizeChanged;
+        KeyDown += MainWindow_KeyDown;
+        Loaded += MainWindow_Loaded;
+        SizeChanged += MainWindow_SizeChanged;
     }
 
     private void MainWindow_KeyDown(object sender, KeyEventArgs e)
     {
         if (!canvas.IsMouseOverCanvasContent(_scrollViewer))
+        {
             return;
+        }
 
         if (_viewState.CurrentViewMode is ViewMode.FrustumCulling or ViewMode.OcclusionCulling)
         {
@@ -87,9 +85,13 @@ public partial class MainWindow : Window
             }
 
             if (_viewState.FrustumFOVAngle < 0.0f)
+            {
                 _viewState.FrustumFOVAngle = 0.0f;
+            }
             else if (_viewState.FrustumFOVAngle > 360.0f)
+            {
                 _viewState.FrustumFOVAngle = 360.0f;
+            }
 
             if (reload)
             {
@@ -116,7 +118,7 @@ public partial class MainWindow : Window
     {
         if (e.ChangedButton == MouseButton.Left)
         {
-            var clickTime = DateTime.Now;
+            DateTime clickTime = DateTime.Now;
             if ((clickTime - _viewState.LastClickTime).TotalMilliseconds <= ViewConstants.DoubleClickTimeMs)
             {
                 _viewState.Center = e.GetPosition(canvas);
@@ -130,7 +132,7 @@ public partial class MainWindow : Window
                 _viewState.IsDragging = true;
                 _viewState.LastMousePosition = e.GetPosition(_scrollViewer);
                 canvas.Cursor = Cursors.Hand;
-                ((UIElement)sender).CaptureMouse();
+                _ = ((UIElement)sender).CaptureMouse();
             }
         }
     }
@@ -166,9 +168,13 @@ public partial class MainWindow : Window
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
             if (e.Delta > 0)
+            {
                 _zoomController.ZoomIn();
+            }
             else
+            {
                 _zoomController.ZoomOut();
+            }
 
             e.Handled = true;
         }
@@ -208,13 +214,13 @@ public partial class MainWindow : Window
 
     private void TransformCenter()
     {
-        Canvas.SetLeft(centerCircle, _viewState.Center.X - ViewConstants.CenterMarkerSize / 2);
-        Canvas.SetTop(centerCircle, _viewState.Center.Y - ViewConstants.CenterMarkerSize / 2);
+        Canvas.SetLeft(centerCircle, _viewState.Center.X - (ViewConstants.CenterMarkerSize / 2));
+        Canvas.SetTop(centerCircle, _viewState.Center.Y - (ViewConstants.CenterMarkerSize / 2));
     }
 
     private void DrawCenter()
     {
-        canvas.Children.Add(centerCircle);
+        _ = canvas.Children.Add(centerCircle);
     }
 
     private void RefreshScreen()

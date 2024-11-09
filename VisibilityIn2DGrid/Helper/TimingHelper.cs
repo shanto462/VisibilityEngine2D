@@ -6,7 +6,7 @@ public static class TimingHelper
 {
     public static void Time(Action action, string methodName)
     {
-        var stopwatch = new Stopwatch();
+        Stopwatch stopwatch = new();
         stopwatch.Start();
 
         try
@@ -22,7 +22,7 @@ public static class TimingHelper
 
     public static T Time<T>(Func<T> func, string methodName)
     {
-        var stopwatch = new Stopwatch();
+        Stopwatch stopwatch = new();
         stopwatch.Start();
 
         try
@@ -38,7 +38,7 @@ public static class TimingHelper
 
     public static async Task TimeAsync(Func<Task> func, string methodName)
     {
-        var stopwatch = new Stopwatch();
+        Stopwatch stopwatch = new();
         stopwatch.Start();
 
         try
@@ -54,7 +54,7 @@ public static class TimingHelper
 
     public static async Task<T> TimeAsync<T>(Func<Task<T>> func, string methodName)
     {
-        var stopwatch = new Stopwatch();
+        Stopwatch stopwatch = new();
         stopwatch.Start();
 
         try

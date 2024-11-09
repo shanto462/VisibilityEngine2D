@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
@@ -35,17 +30,17 @@ public class OcclusionCuller
 
         public (Point, Point, Point) GetViewLines()
         {
-            double startAngle = (Direction - FOVAngle / 2) * Math.PI / 180;
-            double endAngle = (Direction + FOVAngle / 2) * Math.PI / 180;
+            double startAngle = (Direction - (FOVAngle / 2)) * Math.PI / 180;
+            double endAngle = (Direction + (FOVAngle / 2)) * Math.PI / 180;
 
             Point leftPoint = new(
-                Center.X + Range * Math.Cos(startAngle),
-                Center.Y + Range * Math.Sin(startAngle)
+                Center.X + (Range * Math.Cos(startAngle)),
+                Center.Y + (Range * Math.Sin(startAngle))
             );
 
             Point rightPoint = new(
-                Center.X + Range * Math.Cos(endAngle),
-                Center.Y + Range * Math.Sin(endAngle)
+                Center.X + (Range * Math.Cos(endAngle)),
+                Center.Y + (Range * Math.Sin(endAngle))
             );
 
             return (Center, leftPoint, rightPoint);
@@ -59,7 +54,9 @@ public class OcclusionCuller
             );
 
             if (distanceToCenter > Range)
+            {
                 return false;
+            }
 
             double angleToPoint = Math.Atan2(
                 point.Y - Center.Y,
@@ -67,20 +64,29 @@ public class OcclusionCuller
             ) * 180 / Math.PI;
 
             double normalizedDirection = Direction % 360;
-            if (normalizedDirection < 0) normalizedDirection += 360;
+            if (normalizedDirection < 0)
+            {
+                normalizedDirection += 360;
+            }
 
             double normalizedAngle = angleToPoint % 360;
-            if (normalizedAngle < 0) normalizedAngle += 360;
+            if (normalizedAngle < 0)
+            {
+                normalizedAngle += 360;
+            }
 
             double halfFOV = FOVAngle / 2;
             double angleDiff = Math.Abs(normalizedAngle - normalizedDirection);
-            if (angleDiff > 180) angleDiff = 360 - angleDiff;
+            if (angleDiff > 180)
+            {
+                angleDiff = 360 - angleDiff;
+            }
 
             return angleDiff <= halfFOV;
         }
     }
 
-    private readonly Dictionary<Polygon, double> _polygonDistances = new();
+    private readonly Dictionary<Polygon, double> _polygonDistances = [];
 
     public (List<Polygon> visiblePolygons, Polygon viewArea, List<VisibilityRay> rays) CalculateVisibility(
         Point center,
@@ -90,17 +96,19 @@ public class OcclusionCuller
         IEnumerable<Polygon> polygons,
         double step = 0.5)
     {
-        var view = new ViewOcclusion(center, fovAngle, direction, range);
-        var (viewCenter, viewLeft, viewRight) = view.GetViewLines();
+        ViewOcclusion view = new(center, fovAngle, direction, range);
+        (Point viewCenter, Point viewLeft, Point viewRight) = view.GetViewLines();
 
         // Create view area polygon
-        var viewAreaPoints = new PointCollection();
-        viewAreaPoints.Add(viewCenter);
-        viewAreaPoints.Add(viewLeft);
+        PointCollection viewAreaPoints =
+        [
+            viewCenter,
+            viewLeft
+        ];
 
         // Add arc points
-        double startAngle = (direction - fovAngle / 2) * Math.PI / 180;
-        double endAngle = (direction + fovAngle / 2) * Math.PI / 180;
+        double startAngle = (direction - (fovAngle / 2)) * Math.PI / 180;
+        double endAngle = (direction + (fovAngle / 2)) * Math.PI / 180;
 
         if (startAngle > endAngle)
         {
@@ -110,14 +118,14 @@ public class OcclusionCuller
         for (double angle = startAngle; angle <= endAngle; angle += step * Math.PI / 180)
         {
             viewAreaPoints.Add(new Point(
-                center.X + range * Math.Cos(angle),
-                center.Y + range * Math.Sin(angle)
+                center.X + (range * Math.Cos(angle)),
+                center.Y + (range * Math.Sin(angle))
             ));
         }
 
         viewAreaPoints.Add(viewRight);
 
-        var viewAreaPolygon = new Polygon
+        Polygon viewAreaPolygon = new()
         {
             Points = viewAreaPoints,
             Fill = new SolidColorBrush(Color.FromArgb(90, 255, 255, 0)),
@@ -127,7 +135,7 @@ public class OcclusionCuller
 
         // Calculate distances for all polygons
         _polygonDistances.Clear();
-        foreach (var polygon in polygons)
+        foreach (Polygon polygon in polygons)
         {
             if (IsPolygonInView(polygon, view))
             {
@@ -137,19 +145,19 @@ public class OcclusionCuller
         }
 
         // Sort polygons by distance and check occlusion
-        var sortedPolygons = _polygonDistances
+        List<Polygon> sortedPolygons = _polygonDistances
             .OrderBy(kvp => kvp.Value)
             .Select(kvp => kvp.Key)
             .ToList();
 
-        var rays = new List<VisibilityRay>();
+        List<VisibilityRay> rays = [];
 
-        var visiblePolygons = new List<Polygon>();
+        List<Polygon> visiblePolygons = [];
 
-        foreach (var polygon in sortedPolygons)
+        foreach (Polygon? polygon in sortedPolygons)
         {
             bool isVisible = false;
-            foreach (var point in polygon.Points)
+            foreach (Point point in polygon.Points)
             {
                 if (IsPointVisible(point, center, visiblePolygons, out bool isBlocked))
                 {
@@ -169,16 +177,18 @@ public class OcclusionCuller
     private bool IsPointVisible(Point point, Point viewPoint, List<Polygon> occluders, out bool isBlocked)
     {
         isBlocked = false;
-        var ray = point - viewPoint;
+        Vector ray = point - viewPoint;
         double rayLength = ray.Length;
         double distanceToPoint = rayLength;
 
-        foreach (var occluder in occluders)
+        foreach (Polygon occluder in occluders)
         {
             double occluderDistance = _polygonDistances[occluder];
 
             if (occluderDistance >= distanceToPoint)
+            {
                 continue;
+            }
 
             if (DoesPolygonBlockRay(occluder, viewPoint, ray, rayLength))
             {
@@ -192,10 +202,12 @@ public class OcclusionCuller
 
     private static bool IsPolygonInView(Polygon polygon, ViewOcclusion view)
     {
-        foreach (var point in polygon.Points)
+        foreach (Point point in polygon.Points)
         {
             if (view.IsPointInView(point))
+            {
                 return true;
+            }
         }
         return false;
     }
@@ -210,30 +222,36 @@ public class OcclusionCuller
     private bool IsPolygonVisible(Polygon target, Point viewPoint, List<Polygon> occluders)
     {
         // Check if any point of the target is visible
-        foreach (var point in target.Points)
+        foreach (Point point in target.Points)
         {
             if (IsPointVisible(point, viewPoint, occluders))
+            {
                 return true;
+            }
         }
         return false;
     }
 
     private bool IsPointVisible(Point point, Point viewPoint, List<Polygon> occluders)
     {
-        var ray = point - viewPoint;
+        Vector ray = point - viewPoint;
         double rayLength = ray.Length;
         double distanceToPoint = rayLength;
 
-        foreach (var occluder in occluders)
+        foreach (Polygon occluder in occluders)
         {
             double occluderDistance = _polygonDistances[occluder];
 
             // Skip occluders that are farther than the point we're checking
             if (occluderDistance >= distanceToPoint)
+            {
                 continue;
+            }
 
             if (DoesPolygonBlockRay(occluder, viewPoint, ray, rayLength))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -243,13 +261,15 @@ public class OcclusionCuller
     {
         for (int i = 0; i < polygon.Points.Count; i++)
         {
-            var p1 = polygon.Points[i];
-            var p2 = polygon.Points[(i + 1) % polygon.Points.Count];
+            Point p1 = polygon.Points[i];
+            Point p2 = polygon.Points[(i + 1) % polygon.Points.Count];
 
             if (RayIntersectsLine(rayOrigin, rayDirection, p1, p2, out double intersectionDistance))
             {
                 if (intersectionDistance > 0 && intersectionDistance < rayLength)
+                {
                     return true;
+                }
             }
         }
         return false;
@@ -259,18 +279,20 @@ public class OcclusionCuller
     {
         intersectionDistance = 0;
 
-        var v1 = rayOrigin - lineStart;
-        var v2 = lineEnd - lineStart;
-        var v3 = new Vector(-rayDir.Y, rayDir.X);
+        Vector v1 = rayOrigin - lineStart;
+        Vector v2 = lineEnd - lineStart;
+        Vector v3 = new(-rayDir.Y, rayDir.X);
 
         double dot = Vector.Multiply(v2, v3);
         if (Math.Abs(dot) < 0.000001)
+        {
             return false;
+        }
 
         double t1 = Vector.CrossProduct(v2, v1) / dot;
         double t2 = Vector.Multiply(v1, v3) / dot;
 
-        if (t1 >= 0.0 && (t2 >= 0.0 && t2 <= 1.0))
+        if (t1 >= 0.0 && t2 >= 0.0 && t2 <= 1.0)
         {
             intersectionDistance = t1;
             return true;

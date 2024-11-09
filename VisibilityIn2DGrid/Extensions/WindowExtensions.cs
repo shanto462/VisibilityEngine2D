@@ -7,17 +7,17 @@ public static class WindowExtensions
 {
     public static void RunOnUIThread(this Window window, Action action, DispatcherPriority priority = DispatcherPriority.Render)
     {
-        window.Dispatcher.Invoke(priority, action);
+        _ = window.Dispatcher.Invoke(priority, action);
     }
 
     public static void RunWithProgressBar(this Window window, Func<Task> action)
     {
-        var progressWindow = new ProgressWindow
+        ProgressWindow progressWindow = new()
         {
             Owner = window
         };
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             await Task.Delay(1500);
             try
@@ -26,18 +26,18 @@ public static class WindowExtensions
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                _ = MessageBox.Show(ex.Message);
             }
         }).ContinueWith(task =>
         {
             progressWindow.Close();
-            window.Focus();
+            _ = window.Focus();
         }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
-        progressWindow.ShowDialog();
+        _ = progressWindow.ShowDialog();
     }
 
     public static void DoEvents(this Window window)
     {
-        window.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
+        _ = window.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
     }
 }

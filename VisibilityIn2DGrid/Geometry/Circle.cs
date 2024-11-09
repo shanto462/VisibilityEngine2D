@@ -36,27 +36,33 @@ public class Circle
     {
         double dx = point.X - Center.X;
         double dy = point.Y - Center.Y;
-        return dx * dx + dy * dy <= Radius * Radius;
+        return (dx * dx) + (dy * dy) <= Radius * Radius;
     }
 
     public bool IntersectsPolygon(Polygon polygon)
     {
         if (!GetBounds().Intersects(polygon.GetBounds()))
+        {
             return false;
+        }
 
-        foreach (var point in polygon.Points)
+        foreach (Point point in polygon.Points)
         {
             if (ContainsPoint(point))
+            {
                 return true;
+            }
         }
 
         for (int i = 0; i < polygon.Points.Count; i++)
         {
-            var p1 = polygon.Points[i];
-            var p2 = polygon.Points[(i + 1) % polygon.Points.Count];
+            Point p1 = polygon.Points[i];
+            Point p2 = polygon.Points[(i + 1) % polygon.Points.Count];
 
             if (IntersectsLineSegment(p1, p2))
+            {
                 return true;
+            }
         }
 
         return polygon.ContainsPoint(Center);
@@ -66,15 +72,15 @@ public class Circle
     {
         float lineLength = Vector2.Distance(new Vector2((float)p1.X, (float)p1.Y), new Vector2((float)p2.X, (float)p2.Y));
 
-        var t = ((Center.X - p1.X) * (p2.X - p1.X) + (Center.Y - p1.Y) * (p2.Y - p1.Y)) / (lineLength * lineLength);
+        double t = (((Center.X - p1.X) * (p2.X - p1.X)) + ((Center.Y - p1.Y) * (p2.Y - p1.Y))) / (lineLength * lineLength);
         t = Math.Max(0, Math.Min(1, t));
 
-        var closestX = p1.X + t * (p2.X - p1.X);
-        var closestY = p1.Y + t * (p2.Y - p1.Y);
+        double closestX = p1.X + (t * (p2.X - p1.X));
+        double closestY = p1.Y + (t * (p2.Y - p1.Y));
 
-        var dx = closestX - Center.X;
-        var dy = closestY - Center.Y;
+        double dx = closestX - Center.X;
+        double dy = closestY - Center.Y;
 
-        return dx * dx + dy * dy <= Radius * Radius;
+        return (dx * dx) + (dy * dy) <= Radius * Radius;
     }
 }

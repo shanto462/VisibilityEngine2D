@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using VisibilityIn2DGrid.Culling;
@@ -46,45 +41,48 @@ public class VisualizationController(Canvas canvas, ViewState viewState, CanvasM
 
     private void CalculateVisibility()
     {
-        using var shadowCast2D = new ShadowCast2D(_viewState.Center, ViewConstants.VisibilityRange);
+        using ShadowCast2D shadowCast2D = new(_viewState.Center, ViewConstants.VisibilityRange);
 
-        var obstacles = _canvasManager.GetSpatialIndex()?.QueryBounds(
+        List<Polygon>? obstacles = _canvasManager.GetSpatialIndex()?.QueryBounds(
             _viewState.Center,
             ViewConstants.VisibilityRange
         )?.ToList();
 
-        foreach (var obstacle in obstacles ?? [])
+        foreach (Polygon? obstacle in obstacles ?? [])
         {
             shadowCast2D.AddPolygon(obstacle);
         }
 
         _visibilityPolygon = shadowCast2D.ComputeVisibility();
-        _canvas.Children.Add(_visibilityPolygon);
+        _ = _canvas.Children.Add(_visibilityPolygon);
     }
 
     private void CalculateFrustum()
     {
-        var frustum = new FrustumCuller.ViewFrustum(
+        FrustumCuller.ViewFrustum frustum = new(
             _viewState.Center,
             _viewState.FrustumFOVAngle,
             _viewState.FrustumDirection,
             ViewConstants.VisibilityRange
         );
 
-        var spatialIndex = _canvasManager.GetSpatialIndex();
-        if (spatialIndex == null) return;
+        Index.SpatialIndex? spatialIndex = _canvasManager.GetSpatialIndex();
+        if (spatialIndex == null)
+        {
+            return;
+        }
 
-        (var visiblePolygons, var fovPolygon) = spatialIndex.QueryFOV(
+        (IList<Polygon>? visiblePolygons, Polygon? fovPolygon) = spatialIndex.QueryFOV(
             _viewState.Center,
             _viewState.FrustumFOVAngle,
             _viewState.FrustumDirection,
             ViewConstants.VisibilityRange
         );
 
-        var filteredPolygons = FrustumCuller.GetVisiblePolygons(visiblePolygons, frustum);
+        List<Polygon> filteredPolygons = FrustumCuller.GetVisiblePolygons(visiblePolygons, frustum);
 
         _frustumPolygons.Clear();
-        foreach (var visiblePolygon in filteredPolygons)
+        foreach (Polygon visiblePolygon in filteredPolygons)
         {
             _frustumPolygons.Add((visiblePolygon, visiblePolygon.Fill));
             visiblePolygon.Fill = Brushes.Black;
@@ -95,17 +93,17 @@ public class VisualizationController(Canvas canvas, ViewState viewState, CanvasM
         fovPolygon.StrokeThickness = 2;
 
         _frustumPolygon = fovPolygon;
-        _canvas.Children.Add(_frustumPolygon);
+        _ = _canvas.Children.Add(_frustumPolygon);
     }
 
     private void CalculateOcclusion()
     {
-        var potentialPolygons = _canvasManager.GetSpatialIndex()?.QueryBounds(
+        List<Polygon> potentialPolygons = _canvasManager.GetSpatialIndex()?.QueryBounds(
             _viewState.Center,
             ViewConstants.VisibilityRange
         )?.ToList() ?? [];
 
-        var (visiblePolygons, viewArea, rays) = _occlusionCuller.CalculateVisibility(
+        (List<Polygon> visiblePolygons, Polygon viewArea, List<OcclusionCuller.VisibilityRay> rays) = _occlusionCuller.CalculateVisibility(
             _viewState.Center,
             _viewState.FrustumFOVAngle,
             _viewState.FrustumDirection,
@@ -114,20 +112,20 @@ public class VisualizationController(Canvas canvas, ViewState viewState, CanvasM
         );
 
         _occlusionPolygons.Clear();
-        foreach (var visiblePolygon in visiblePolygons)
+        foreach (Polygon visiblePolygon in visiblePolygons)
         {
             _occlusionPolygons.Add((visiblePolygon, visiblePolygon.Fill));
             visiblePolygon.Fill = Brushes.Black;
         }
 
         _occlusionPolygon = viewArea;
-        _canvas.Children.Add(_occlusionPolygon);
+        _ = _canvas.Children.Add(_occlusionPolygon);
 
         if (_viewState.ShowRays)
         {
-            foreach (var ray in rays)
+            foreach (OcclusionCuller.VisibilityRay ray in rays)
             {
-                var line = new Line
+                Line line = new()
                 {
                     X1 = ray.Start.X,
                     Y1 = ray.Start.Y,
@@ -145,19 +143,29 @@ public class VisualizationController(Canvas canvas, ViewState viewState, CanvasM
     private void RemoveViews()
     {
         if (_visibilityPolygon != null)
+        {
             _canvas.Children.Remove(_visibilityPolygon);
+        }
 
         if (_frustumPolygon != null)
+        {
             _canvas.Children.Remove(_frustumPolygon);
+        }
 
         if (_occlusionPolygon != null)
+        {
             _canvas.Children.Remove(_occlusionPolygon);
+        }
 
-        foreach (var (polygon, brush) in _frustumPolygons)
+        foreach ((Polygon polygon, Brush brush) in _frustumPolygons)
+        {
             polygon.Fill = brush;
+        }
 
-        foreach (var (polygon, brush) in _occlusionPolygons)
+        foreach ((Polygon polygon, Brush brush) in _occlusionPolygons)
+        {
             polygon.Fill = brush;
+        }
 
         _canvasManager.ClearVisualizationRays();
     }

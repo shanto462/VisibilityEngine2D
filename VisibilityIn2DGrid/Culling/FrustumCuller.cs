@@ -14,17 +14,17 @@ public static class FrustumCuller
 
         public (Point, Point, Point) GetFrustumLines()
         {
-            double startAngle = (Direction - FOVAngle / 2) * Math.PI / 180;
-            double endAngle = (Direction + FOVAngle / 2) * Math.PI / 180;
+            double startAngle = (Direction - (FOVAngle / 2)) * Math.PI / 180;
+            double endAngle = (Direction + (FOVAngle / 2)) * Math.PI / 180;
 
             Point leftPoint = new(
-                Center.X + Range * Math.Cos(startAngle),
-                Center.Y + Range * Math.Sin(startAngle)
+                Center.X + (Range * Math.Cos(startAngle)),
+                Center.Y + (Range * Math.Sin(startAngle))
             );
 
             Point rightPoint = new(
-                Center.X + Range * Math.Cos(endAngle),
-                Center.Y + Range * Math.Sin(endAngle)
+                Center.X + (Range * Math.Cos(endAngle)),
+                Center.Y + (Range * Math.Sin(endAngle))
             );
 
             return (Center, leftPoint, rightPoint);
@@ -33,14 +33,16 @@ public static class FrustumCuller
 
     private static bool IsPointInFrustum(Point point, ViewFrustum frustum)
     {
-        var (center, left, right) = frustum.GetFrustumLines();
+        (_, _, _) = frustum.GetFrustumLines();
 
         double distanceToCenter = Math.Sqrt(
             Math.Pow(point.X - frustum.Center.X, 2) +
             Math.Pow(point.Y - frustum.Center.Y, 2)
         );
         if (distanceToCenter > frustum.Range)
+        {
             return false;
+        }
 
         double angleToPoint = Math.Atan2(
             point.Y - frustum.Center.Y,
@@ -48,32 +50,45 @@ public static class FrustumCuller
         ) * 180 / Math.PI;
 
         double normalizedDirection = frustum.Direction % 360;
-        if (normalizedDirection < 0) normalizedDirection += 360;
+        if (normalizedDirection < 0)
+        {
+            normalizedDirection += 360;
+        }
 
         double normalizedAngle = angleToPoint % 360;
-        if (normalizedAngle < 0) normalizedAngle += 360;
+        if (normalizedAngle < 0)
+        {
+            normalizedAngle += 360;
+        }
 
         double halfFOV = frustum.FOVAngle / 2;
         double angleDiff = Math.Abs(normalizedAngle - normalizedDirection);
-        if (angleDiff > 180) angleDiff = 360 - angleDiff;
+        if (angleDiff > 180)
+        {
+            angleDiff = 360 - angleDiff;
+        }
 
         return angleDiff <= halfFOV;
     }
 
     public static bool IsPolygonVisible(Polygon polygon, ViewFrustum frustum)
     {
-        var points = polygon.Points.Select(p => new Point(p.X, p.Y)).ToList();
+        List<Point> points = polygon.Points.Select(p => new Point(p.X, p.Y)).ToList();
 
-        foreach (var point in points)
+        foreach (Point point in points)
         {
             if (IsPointInFrustum(point, frustum))
+            {
                 return true;
+            }
         }
 
         if (IsPointInPolygon(frustum.Center, points))
+        {
             return true;
+        }
 
-        var (center, left, right) = frustum.GetFrustumLines();
+        (Point center, Point left, Point right) = frustum.GetFrustumLines();
         List<(Point, Point)> frustumLines =
         [
             (center, left),
@@ -82,13 +97,15 @@ public static class FrustumCuller
 
         for (int i = 0; i < points.Count; i++)
         {
-            var start = points[i];
-            var end = points[(i + 1) % points.Count];
+            Point start = points[i];
+            Point end = points[(i + 1) % points.Count];
 
-            foreach (var (frustumStart, frustumEnd) in frustumLines)
+            foreach ((Point frustumStart, Point frustumEnd) in frustumLines)
             {
                 if (DoLinesIntersect(start, end, frustumStart, frustumEnd))
+                {
                     return true;
+                }
             }
         }
 
@@ -101,8 +118,8 @@ public static class FrustumCuller
         for (int i = 0, j = polygonPoints.Count - 1; i < polygonPoints.Count; j = i++)
         {
             if (((polygonPoints[i].Y > point.Y) != (polygonPoints[j].Y > point.Y)) &&
-                (point.X < (polygonPoints[j].X - polygonPoints[i].X) * (point.Y - polygonPoints[i].Y) /
-                (polygonPoints[j].Y - polygonPoints[i].Y) + polygonPoints[i].X))
+                (point.X < ((polygonPoints[j].X - polygonPoints[i].X) * (point.Y - polygonPoints[i].Y) /
+                (polygonPoints[j].Y - polygonPoints[i].Y)) + polygonPoints[i].X))
             {
                 inside = !inside;
             }
@@ -112,13 +129,15 @@ public static class FrustumCuller
 
     private static bool DoLinesIntersect(Point p1, Point p2, Point p3, Point p4)
     {
-        double den = (p4.Y - p3.Y) * (p2.X - p1.X) - (p4.X - p3.X) * (p2.Y - p1.Y);
+        double den = ((p4.Y - p3.Y) * (p2.X - p1.X)) - ((p4.X - p3.X) * (p2.Y - p1.Y));
 
         if (den == 0)
+        {
             return false;
+        }
 
-        double ua = ((p4.X - p3.X) * (p1.Y - p3.Y) - (p4.Y - p3.Y) * (p1.X - p3.X)) / den;
-        double ub = ((p2.X - p1.X) * (p1.Y - p3.Y) - (p2.Y - p1.Y) * (p1.X - p3.X)) / den;
+        double ua = (((p4.X - p3.X) * (p1.Y - p3.Y)) - ((p4.Y - p3.Y) * (p1.X - p3.X))) / den;
+        double ub = (((p2.X - p1.X) * (p1.Y - p3.Y)) - ((p2.Y - p1.Y) * (p1.X - p3.X))) / den;
 
         return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
     }
