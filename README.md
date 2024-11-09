@@ -57,7 +57,7 @@ Occlusion culling shows advanced visibility determination with ray visualization
 
 ## Requirements
 
-- .NET Core 6.0 or later
+- .NET 8.0 or later
 - Windows OS (WPF dependency)
 - Visual Studio 2022 or compatible IDE
 
@@ -97,7 +97,7 @@ VisibilityIn2DGrid/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/VisibilityIn2DGrid.git
+git clone https://github.com/shanto462/VisibilityEngine2D
 ```
 
 2. Open the solution in Visual Studio 2022
