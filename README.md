@@ -2,6 +2,20 @@
 
 A sophisticated C# WPF application demonstrating various 2D visibility and culling techniques in a dynamic grid environment.
 
+## Screenshots
+
+### Shadow Casting
+![Shadow Casting Mode](docs/images/shadow_casting.png)
+Shadow casting provides 360-degree visibility calculation using ray casting techniques. The yellow area represents the visible region from the viewpoint.
+
+### Frustum Culling
+![Frustum Culling Mode](docs/images/frustum_culling.png)
+Frustum culling demonstrates a cone of vision with a specified field of view (FOV) angle. Objects within this cone are rendered in their original colors, while others are filtered out.
+
+### Occlusion Culling
+![Occlusion Culling Mode](docs/images/occlusion_culling.png)
+Occlusion culling shows advanced visibility determination with ray visualization. Objects that are visible from the viewpoint are highlighted, while occluded objects behind obstacles maintain their original appearance.
+
 ## Features
 
 - **Multiple Visibility Algorithms**
@@ -150,4 +164,3 @@ SOFTWARE.
 
 - Email: shalahuddinshanto@gmail.com
 - LinkedIn: [Md. Shalah Uddin](https://www.linkedin.com/in/md-shalah-uddin)
-
