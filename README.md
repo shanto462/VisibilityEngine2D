@@ -163,4 +163,4 @@ SOFTWARE.
 ## Contact
 
 - Email: shalahuddinshanto@gmail.com
-- LinkedIn: [Md. Shalah Uddin](https://www.linkedin.com/in/md-shalah-uddin)
+- LinkedIn: [Md. Shalah Uddin](https://www.linkedin.com/in/shanto462/)
