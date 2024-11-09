@@ -1,7 +1,7 @@
 ﻿using System.Windows;
-using VisibilityIn2DGrid.Enums;
+using VisibilityEngine2D.Enums;
 
-namespace VisibilityIn2DGrid.Helper.UI;
+namespace VisibilityEngine2D.Helper.UI;
 
 public class ViewState
 {

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace VisibilityIn2DGrid.Helper;
+namespace VisibilityEngine2D.Helper;
 
 public static class TimingHelper
 {

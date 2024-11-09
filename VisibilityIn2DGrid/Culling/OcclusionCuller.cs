@@ -2,7 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace VisibilityIn2DGrid.Culling;
+namespace VisibilityEngine2D.Culling;
 
 public class OcclusionCuller
 {

@@ -1,4 +1,4 @@
-# VisibilityIn2DGrid
+# VisibilityEngine2D
 
 A sophisticated C# WPF application demonstrating various 2D visibility and culling techniques in a dynamic grid environment.
 

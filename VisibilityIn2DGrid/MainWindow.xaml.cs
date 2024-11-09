@@ -3,13 +3,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Enums;
-using VisibilityIn2DGrid.Extensions;
-using VisibilityIn2DGrid.Helper.UI;
-using VisibilityIn2DGrid.Helper.UI.Constants;
-using VisibilityIn2DGrid.Helper.UI.Controllers;
+using VisibilityEngine2D.Enums;
+using VisibilityEngine2D.Extensions;
+using VisibilityEngine2D.Helper.UI;
+using VisibilityEngine2D.Helper.UI.Constants;
+using VisibilityEngine2D.Helper.UI.Controllers;
 
-namespace VisibilityIn2DGrid;
+namespace VisibilityEngine2D;
 
 public partial class MainWindow : Window
 {

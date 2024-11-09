@@ -2,7 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace VisibilityIn2DGrid.Helper;
+namespace VisibilityEngine2D.Helper;
 
 public static class RandomPolygonGenerator
 {

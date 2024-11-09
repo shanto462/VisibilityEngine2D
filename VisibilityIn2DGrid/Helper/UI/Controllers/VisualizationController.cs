@@ -1,12 +1,12 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Culling;
-using VisibilityIn2DGrid.Enums;
-using VisibilityIn2DGrid.Helper.UI.Constants;
-using VisibilityIn2DGrid.RayTracing;
+using VisibilityEngine2D.Culling;
+using VisibilityEngine2D.Enums;
+using VisibilityEngine2D.Helper.UI.Constants;
+using VisibilityEngine2D.RayTracing;
 
-namespace VisibilityIn2DGrid.Helper.UI.Controllers;
+namespace VisibilityEngine2D.Helper.UI.Controllers;
 
 public class VisualizationController(Canvas canvas, ViewState viewState, CanvasManager canvasManager)
 {

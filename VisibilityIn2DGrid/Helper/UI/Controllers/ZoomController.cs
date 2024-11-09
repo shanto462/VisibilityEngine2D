@@ -1,8 +1,8 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Media;
-using VisibilityIn2DGrid.Helper.UI.Constants;
+using VisibilityEngine2D.Helper.UI.Constants;
 
-namespace VisibilityIn2DGrid.Helper.UI.Controllers;
+namespace VisibilityEngine2D.Helper.UI.Controllers;
 
 public class ZoomController(ScaleTransform zoomTransform, TextBlock zoomLevelText, ViewState viewState)
 {

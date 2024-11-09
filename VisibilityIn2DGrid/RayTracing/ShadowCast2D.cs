@@ -2,9 +2,9 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Extensions;
+using VisibilityEngine2D.Extensions;
 
-namespace VisibilityIn2DGrid.RayTracing;
+namespace VisibilityEngine2D.RayTracing;
 
 public class ShadowCast2D(Point origin, double radius, double step = 0.1f) : IDisposable
 {

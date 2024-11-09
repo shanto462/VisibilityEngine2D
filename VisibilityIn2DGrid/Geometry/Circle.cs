@@ -1,9 +1,9 @@
 ﻿using System.Numerics;
 using System.Windows;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Extensions;
+using VisibilityEngine2D.Extensions;
 
-namespace VisibilityIn2DGrid.Geometry;
+namespace VisibilityEngine2D.Geometry;
 
 public class Circle
 {

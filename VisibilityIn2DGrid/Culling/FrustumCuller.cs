@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Shapes;
 
-namespace VisibilityIn2DGrid.Culling;
+namespace VisibilityEngine2D.Culling;
 
 public static class FrustumCuller
 {

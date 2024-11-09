@@ -1,9 +1,9 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Helper.UI.Constants;
-using VisibilityIn2DGrid.Index;
+using VisibilityEngine2D.Helper.UI.Constants;
+using VisibilityEngine2D.Index;
 
-namespace VisibilityIn2DGrid.Helper.UI;
+namespace VisibilityEngine2D.Helper.UI;
 
 public class CanvasManager
 {

@@ -1,4 +1,4 @@
-﻿namespace VisibilityIn2DGrid.Helper.UI.Constants;
+﻿namespace VisibilityEngine2D.Helper.UI.Constants;
 
 public static class ViewConstants
 {

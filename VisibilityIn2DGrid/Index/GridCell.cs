@@ -1,6 +1,6 @@
 ﻿using System.Windows.Shapes;
 
-namespace VisibilityIn2DGrid.Index;
+namespace VisibilityEngine2D.Index;
 
 public class GridCell
 {

@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace VisibilityIn2DGrid;
+namespace VisibilityEngine2D;
 
 public partial class ProgressWindow : Window
 {

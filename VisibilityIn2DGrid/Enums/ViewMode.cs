@@ -1,4 +1,4 @@
-﻿namespace VisibilityIn2DGrid.Enums;
+﻿namespace VisibilityEngine2D.Enums;
 
 public enum ViewMode
 {

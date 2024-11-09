@@ -2,10 +2,10 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Extensions;
-using VisibilityIn2DGrid.Geometry;
+using VisibilityEngine2D.Extensions;
+using VisibilityEngine2D.Geometry;
 
-namespace VisibilityIn2DGrid.Index;
+namespace VisibilityEngine2D.Index;
 
 public class SpatialIndex(float width, float height, float gridSize) : IDisposable
 {

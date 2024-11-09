@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace VisibilityIn2DGrid.Geometry;
+namespace VisibilityEngine2D.Geometry;
 
 public class Bounds
 {

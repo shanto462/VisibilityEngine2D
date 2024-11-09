@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace VisibilityIn2DGrid.Extensions;
+namespace VisibilityEngine2D.Extensions;
 
 public static class MouseExtensions
 {

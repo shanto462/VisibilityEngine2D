@@ -1,9 +1,9 @@
 ﻿<Window
-    x:Class="VisibilityIn2DGrid.ProgressWindow"
+    x:Class="VisibilityEngine2D.ProgressWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:VisibilityIn2DGrid"
+    xmlns:local="clr-namespace:VisibilityEngine2D"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="ProgressWindow"
     Width="120"

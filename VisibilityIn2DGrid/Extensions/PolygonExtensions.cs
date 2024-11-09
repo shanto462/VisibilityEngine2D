@@ -1,9 +1,9 @@
 ﻿using System.Numerics;
 using System.Windows;
 using System.Windows.Shapes;
-using VisibilityIn2DGrid.Geometry;
+using VisibilityEngine2D.Geometry;
 
-namespace VisibilityIn2DGrid.Extensions;
+namespace VisibilityEngine2D.Extensions;
 
 public static class PolygonExtensions
 {
