@@ -9,3 +9,6 @@
 .vs/
 .idea/
 .vscode/
+
+# Release packaging dry runs
+/dist/

@@ -1,0 +1,60 @@
+name: Bug report
+description: Something does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+        Do not report security vulnerabilities here. Use [private vulnerability reporting](https://github.com/shanto462/VisibilityEngine2D/security/advisories/new) instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. A screenshot helps a lot.
+      placeholder: For example, "The visible region leaks through the corner where two obstacles touch."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The command line or the steps in the app. The seed, viewer position and mode make most problems easy to reproduce.
+      placeholder: |
+        1. visibility-engine-2d --seed 42 --viewer 1200,800 --mode occlusion --fov 120
+        2. Drag the viewer to the right
+        3. See the obstacle at the top flicker
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: For example, "The obstacle stays highlighted while any part of it is visible."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `visibility-engine-2d --version`, or the commit you built.
+      placeholder: visibility-engine-2d 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: Any error message or log output. It is formatted as code automatically.
+      render: text
