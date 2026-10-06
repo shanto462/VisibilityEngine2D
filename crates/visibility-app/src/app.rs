@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use eframe::egui::{
-    self, Align2, Color32, CursorIcon, FontId, Key, Mesh, Modifiers, PointerButton, Pos2, Rect, Sense, Shape, Stroke,
+    self, Color32, CursorIcon, FontId, Key, Mesh, Modifiers, PointerButton, Pos2, Rect, Sense, Shape, Stroke,
     StrokeKind, Ui,
 };
 use eframe::egui_wgpu;
@@ -341,8 +341,8 @@ impl VisibilityApp {
                             ("Drag", "Pan"),
                             ("Scroll", "Pan"),
                             ("Ctrl/Cmd + scroll", "Zoom"),
-                            ("Alt + ← / →", "Turn the cone"),
-                            ("Alt + ↑ / ↓", "Widen or narrow the cone"),
+                            ("Alt + Left / Right", "Turn the cone"),
+                            ("Alt + Up / Down", "Widen or narrow the cone"),
                             ("1 / 2 / 3", "Switch mode"),
                             ("R", "Toggle rays"),
                             ("F", "Fit the world"),
@@ -635,7 +635,7 @@ impl VisibilityApp {
     fn draw_viewer(&self, painter: &egui::Painter, rect: Rect, cam: &Camera, colors: &CanvasColors) {
         let p = cam.world_to_screen(rect, self.viewer);
         let stroke = if self.output.blocked {
-            Stroke::new(2.0, colors.ray_blocked)
+            Stroke::new(2.0, colors.warning)
         } else {
             Stroke::new(2.0, colors.viewer_stroke)
         };
@@ -646,13 +646,15 @@ impl VisibilityApp {
             painter.arrow(p, tip - p, stroke);
         }
         if self.output.blocked {
-            painter.text(
-                p + egui::vec2(14.0, -14.0),
-                Align2::LEFT_BOTTOM,
-                "Inside an obstacle",
+            let galley = painter.layout_no_wrap(
+                "Inside an obstacle".to_owned(),
                 FontId::proportional(13.0),
-                colors.ray_blocked,
+                Color32::WHITE,
             );
+            let pos = p + egui::vec2(16.0, -16.0 - galley.size().y);
+            let bg = Rect::from_min_size(pos, galley.size()).expand2(egui::vec2(6.0, 3.0));
+            painter.rect_filled(bg, 4.0, colors.warning);
+            painter.galley(pos, galley, Color32::WHITE);
         }
     }
 

@@ -89,9 +89,9 @@ fn main() {
     }
 }
 
-/// Mean microseconds per call, after a short warm-up.
+/// Mean microseconds per call, after one full warm-up pass (caches and CPU clocks).
 fn time<T>(views: &[T], mut f: impl FnMut(&T) -> usize) -> f64 {
-    for v in views.iter().take(10) {
+    for v in views {
         black_box(f(v));
     }
     let t = Instant::now();

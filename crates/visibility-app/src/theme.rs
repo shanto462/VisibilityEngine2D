@@ -42,6 +42,8 @@ pub struct CanvasColors {
     pub viewer_fill: Color32,
     pub viewer_stroke: Color32,
     pub hover_stroke: Color32,
+    /// Viewer marker and label when the viewer stands inside an obstacle.
+    pub warning: Color32,
 }
 
 impl CanvasColors {
@@ -61,6 +63,7 @@ impl CanvasColors {
             viewer_fill: Color32::from_rgba_unmultiplied(0, 150, 255, 60),
             viewer_stroke: Color32::from_rgb(0, 100, 200),
             hover_stroke: Color32::from_rgb(17, 24, 39),
+            warning: Color32::from_rgb(220, 38, 38),
         };
         if dark {
             Self {
