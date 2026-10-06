@@ -1,0 +1,17 @@
+[package]
+name = "visibility-core"
+description = "Exact 2D visibility polygons, view-cone culling and occlusion culling on polygon obstacles"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords = ["visibility", "geometry", "culling", "raycasting", "2d"]
+categories = ["algorithms", "game-development", "graphics", "mathematics"]
+
+[dependencies]
+rayon.workspace = true
+
+[lints]
+workspace = true
