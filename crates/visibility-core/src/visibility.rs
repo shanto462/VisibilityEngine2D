@@ -35,6 +35,8 @@ use crate::scene::{RayHit, Scene};
 const ANGLE_EPS: f64 = 1e-8;
 /// Tag for boundary points that are not on a single obstacle edge.
 const CORNER: u32 = u32::MAX;
+/// A viewer closer than this to an obstacle edge stands on the obstacle.
+const BOUNDARY_EPS: f64 = 1e-9;
 
 /// What the viewer can see: a circle of radius `range`, or a sector of it.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -267,53 +269,67 @@ pub fn compute_visibility(scene: &Scene, cone: &ViewCone, opts: &VisibilityOptio
     // 1. Front-facing edges clipped to the range, and their endpoints as events.
     let mut edges: Vec<LocalEdge> = Vec::new();
     let mut events: Vec<Event> = Vec::new();
-    let mut stamps = scene.new_stamps();
+    let mut on_boundary = false;
     let stats = &mut out.stats;
-    scene.for_each_polygon_near(&cone.aabb(), &mut stamps, |id| {
-        let poly = scene.polygon(id);
-        if poly.aabb.distance_sq_to(o) > r2 {
-            return;
-        }
-        stats.candidate_polygons += 1;
-        let verts = scene.polygon_vertices(id);
-        let n = verts.len();
-        for i in 0..n {
-            let j = (i + 1) % n;
-            let (a, b) = (verts[i], verts[j]);
-            if (b - a).cross(o - a) >= 0.0 {
-                continue; // back-facing or edge-on: never the first hit
+    scene.with_stamps(|stamps| {
+        scene.for_each_polygon_near(&cone.aabb(), stamps, |id| {
+            let poly = scene.polygon(id);
+            if poly.aabb.distance_sq_to(o) > r2 {
+                return;
             }
-            let Some((t0, t1)) = clip_segment_to_disk(a, b, o, r) else {
-                continue;
-            };
-            let p = if t0 <= 0.0 { a } else { a.lerp(b, t0) };
-            let q = if t1 >= 1.0 { b } else { a.lerp(b, t1) };
-            let (rp, rq) = (rel(p), rel(q));
-            // Front-facing means `q` is clockwise of `p`, so the edge covers `rq` to `rp`.
-            edges.push(LocalEdge {
-                a: p,
-                b: q,
-                near: point_segment_distance(o, p, q),
-                edge: poly.first + i as u32,
-                span_start: rq,
-                span_len: normalize_angle(rp - rq),
-            });
-            if full || rp <= fov {
-                events.push(Event {
-                    angle: rp,
-                    vertex: (t0 <= 0.0).then_some((p, poly.first + i as u32)),
-                    side: false,
+            stats.candidate_polygons += 1;
+            let verts = scene.polygon_vertices(id);
+            let n = verts.len();
+            for i in 0..n {
+                let j = (i + 1) % n;
+                let (a, b) = (verts[i], verts[j]);
+                let cross = (b - a).cross(o - a);
+                // Distance to the edge's line is |cross| / |b - a|; compare squared to skip the sqrt.
+                if cross * cross <= BOUNDARY_EPS * BOUNDARY_EPS * (b - a).length_sq()
+                    && point_segment_distance(o, a, b) <= BOUNDARY_EPS
+                {
+                    on_boundary = true; // standing on the obstacle's edge counts as inside it
+                }
+                if cross >= 0.0 {
+                    continue; // back-facing or edge-on: never the first hit
+                }
+                let Some((t0, t1)) = clip_segment_to_disk(a, b, o, r) else {
+                    continue;
+                };
+                let p = if t0 <= 0.0 { a } else { a.lerp(b, t0) };
+                let q = if t1 >= 1.0 { b } else { a.lerp(b, t1) };
+                let (rp, rq) = (rel(p), rel(q));
+                // Front-facing means `q` is clockwise of `p`, so the edge covers `rq` to `rp`.
+                edges.push(LocalEdge {
+                    a: p,
+                    b: q,
+                    near: point_segment_distance(o, p, q),
+                    edge: poly.first + i as u32,
+                    span_start: rq,
+                    span_len: normalize_angle(rp - rq),
                 });
+                if full || rp <= fov {
+                    events.push(Event {
+                        angle: rp,
+                        vertex: (t0 <= 0.0).then_some((p, poly.first + i as u32)),
+                        side: false,
+                    });
+                }
+                if full || rq <= fov {
+                    events.push(Event {
+                        angle: rq,
+                        vertex: (t1 >= 1.0).then_some((q, poly.first + j as u32)),
+                        side: false,
+                    });
+                }
             }
-            if full || rq <= fov {
-                events.push(Event {
-                    angle: rq,
-                    vertex: (t1 >= 1.0).then_some((q, poly.first + j as u32)),
-                    side: false,
-                });
-            }
-        }
+        });
     });
+    if on_boundary {
+        out.blocked = true;
+        out.stats = VisibilityStats::default();
+        return out;
+    }
     out.stats.front_edges = edges.len();
 
     if !full {
@@ -329,14 +345,29 @@ pub fn compute_visibility(scene: &Scene, cone: &ViewCone, opts: &VisibilityOptio
         });
     }
     events.sort_unstable_by(|a, b| a.angle.total_cmp(&b.angle));
-    events.dedup_by(|next, kept| {
-        let same = next.angle - kept.angle < 1e-12;
-        if same {
-            kept.vertex = kept.vertex.or(next.vertex);
-            kept.side |= next.side;
+    // Merge events at the same angle. Distinct corners on one ray are kept aside, so each
+    // still gets its own visibility check: (event index, corner, vertex index).
+    let mut extra_corners: Vec<(u32, Vec2, u32)> = Vec::new();
+    let mut merged: Vec<Event> = Vec::with_capacity(events.len());
+    for e in events {
+        if let Some(last) = merged.last_mut()
+            && e.angle - last.angle < 1e-12
+        {
+            last.side |= e.side;
+            match (last.vertex, e.vertex) {
+                (None, v) => last.vertex = v,
+                (Some((_, kept)), Some((p, vi))) if kept != vi => {
+                    extra_corners.push(((merged.len() - 1) as u32, p, vi));
+                }
+                _ => {}
+            }
+            continue;
         }
-        same
-    });
+        merged.push(e);
+    }
+    extra_corners.sort_unstable_by_key(|&(ev, _, vi)| (ev, vi));
+    extra_corners.dedup_by_key(|&mut (ev, _, vi)| (ev, vi));
+    let events = merged;
     out.stats.events = events.len();
     if events.is_empty() {
         // Full circle with nothing in range.
@@ -421,12 +452,16 @@ pub fn compute_visibility(scene: &Scene, cone: &ViewCone, opts: &VisibilityOptio
             break;
         };
 
-        // The two side rays of one corner: decide whether the corner itself is seen.
+        // The two side rays of one event: decide which of its corners are seen.
         if s.offset == -1 && next.offset == 1 && next.event == s.event {
-            if let Some((v, vi)) = events[s.event as usize].vertex {
+            let lo = extra_corners.partition_point(|c| c.0 < s.event);
+            let hi = extra_corners.partition_point(|c| c.0 <= s.event);
+            let extras = extra_corners[lo..hi].iter().map(|&(_, v, vi)| (v, vi));
+            let mut seen: Vec<(f64, Vec2)> = Vec::new();
+            for (v, vi) in events[s.event as usize].vertex.into_iter().chain(extras) {
                 let visible = sweep.corner_visible(v, vi, s.hit, next.hit);
                 if visible {
-                    outline.push(v, CORNER);
+                    seen.push((v.distance(o), v));
                 }
                 if opts.collect_rays {
                     let blocked_at = s.hit.map_or(r, |h| h.t).min(next.hit.map_or(r, |h| h.t));
@@ -441,6 +476,12 @@ pub fn compute_visibility(scene: &Scene, cone: &ViewCone, opts: &VisibilityOptio
                         visible,
                     });
                 }
+            }
+            // Corners on one ray: the outline reaches the one nearest the "before" hit first.
+            let before = s.hit.map_or(r, |h| h.t);
+            seen.sort_by(|a, b| (a.0 - before).abs().total_cmp(&(b.0 - before).abs()));
+            for (_, v) in seen {
+                outline.push(v, CORNER);
             }
             continue;
         }
@@ -682,6 +723,8 @@ impl Outline {
 
 /// Largest angle step whose chord stays within `tolerance` of a circle of radius `r`.
 pub(crate) fn arc_step(r: f64, tolerance: f64) -> f64 {
+    // Also maps zero, negative and NaN tolerances to a tiny positive one.
+    let tolerance = tolerance.max(1e-9);
     if tolerance >= r {
         return FRAC_PI_2;
     }

@@ -23,8 +23,8 @@ macOS.
   can be seen, not only one of its corners.
 - **Scales to big worlds.** 100,000 obstacles (550,000 vertices) pan and zoom
   smoothly, because the obstacles are uploaded to the GPU once.
-- **Safe and portable.** Written in Rust, with `unsafe` code forbidden in this
-  project. Windows and macOS, and Linux builds too.
+- **Safe and portable.** The library forbids `unsafe` code, and the app has a single
+  audited Windows console call. Windows and macOS, and Linux builds too.
 
 ## Gallery
 
@@ -45,9 +45,9 @@ Reproduce it with `cargo run --release -p visibility-core --example bench`.
 
 | Scene | Build scene + index | Shadow cast (360°) | Frustum culling (90°) | Occlusion culling (90°) |
 | --- | ---: | ---: | ---: | ---: |
-| 500 obstacles, 2000², range 300 | 64 µs | 23 µs | 1.4 µs | 10 µs |
-| 3,000 obstacles, 2000², range 300 | 342 µs | 124 µs | 5.8 µs | 44 µs |
-| 50,000 obstacles, 20000², range 1500 | 4.1 ms | 532 µs | 19 µs | 160 µs |
+| 500 obstacles, 2000², range 300 | 64 µs | 23 µs | 1.2 µs | 9 µs |
+| 3,000 obstacles, 2000², range 300 | 342 µs | 124 µs | 5.1 µs | 44 µs |
+| 50,000 obstacles, 20000², range 1500 | 4.1 ms | 550 µs | 16 µs | 160 µs |
 
 The first row is the scene the app opens with.
 
@@ -112,7 +112,9 @@ the viewer sees, and highlighted obstacles are the result of the culling test.
 | Show the whole world | F |
 
 The side panel also sets the range, the number of obstacles (up to 200,000), the
-world size and the random seed, and shows timings and algorithm counters.
+world size and the random seed, and shows timings and algorithm counters. With
+**Keep density** on (the default), the world grows with the obstacle count, so
+200,000 obstacles get a 40,000 × 40,000 world instead of piling up.
 
 ### Command line
 
@@ -131,8 +133,8 @@ visibility-engine-2d --obstacles 100000 --world 28000 --range 1500 --zoom 0.3
 | `--fov DEG` | `90` | Cone angle for frustum and occlusion culling. |
 | `--direction DEG` | `0` | Cone direction. 0 points right, 90 points down. |
 | `--rays` | off | Show rays toward obstacle corners. |
-| `--obstacles N` | `500` | Number of random obstacles. |
-| `--world SIZE` | `2000` | World width and height. |
+| `--obstacles N` | `500` | Number of random obstacles, up to 200,000. |
+| `--world SIZE` | grows with `--obstacles` | World width and height. By default the world keeps the density of 500 obstacles per 2000 × 2000. |
 | `--seed N` | `24301` | Random seed. The same seed gives the same world on every system. |
 | `--zoom Z`, `--center X,Y` | 100% on the viewer (whole world if larger than 4000) | Initial camera. |
 | `--window WxH` | `1440x900` | Window size. |
@@ -209,8 +211,10 @@ let in_cone = frustum_cull(&scene, &cone).visible;
 let seen = compute_visibility(&scene, &cone, &options).visible;
 ```
 
-Use `Scene::new` with your own polygons in any winding order. The `y` axis points
-down, as on screen, and angles are in radians, with 0 along `+x`.
+Use `Scene::new` with your own polygons in any winding order; polygon `i` of the
+input has id `i` in every result. `Scene::cast_ray` answers single line-of-sight
+questions. The `y` axis points down, as on screen, and angles are in radians, with 0
+along `+x`.
 
 ## Project layout
 

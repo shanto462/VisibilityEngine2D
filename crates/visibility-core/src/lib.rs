@@ -44,6 +44,8 @@
 //! assert!(vis.polygon.contains(&Vec2::new(100.0, -10.0)));
 //! ```
 
+#![forbid(unsafe_code)]
+
 pub mod frustum;
 pub mod geom;
 pub mod grid;

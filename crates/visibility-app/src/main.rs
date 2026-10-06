@@ -31,8 +31,9 @@ View:
   --rays                              Show the rays toward obstacle corners
 
 Scene:
-  --obstacles <N>                     Number of random obstacles (default: 500)
-  --world <SIZE>                      World width and height (default: 2000)
+  --obstacles <N>                     Number of random obstacles, up to 200000 (default: 500)
+  --world <SIZE>                      World width and height (default: grows with --obstacles,
+                                      2000 for 500, so obstacles never pile up)
   --seed <N>                          Random seed (default: 24301)
 
 Window:
@@ -65,6 +66,8 @@ pub struct LaunchOptions {
     pub theme: Option<egui::Theme>,
     /// Start with the side panel hidden.
     pub hide_panel: bool,
+    /// Grow the world with the obstacle count (off when `--world` is given).
+    pub keep_density: bool,
     /// Save a screenshot here and exit.
     pub screenshot: Option<PathBuf>,
 }
@@ -80,6 +83,7 @@ impl Default for LaunchOptions {
             window: [1440.0, 900.0],
             theme: None,
             hide_panel: false,
+            keep_density: true,
             screenshot: None,
         }
     }
@@ -110,10 +114,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Parsed, String> 
             "--fov" => o.view.fov_deg = parse_num(&value()?, 1.0, 360.0)?,
             "--direction" => o.view.direction_deg = parse_num(&value()?, -360.0, 360.0)?,
             "--rays" => o.view.show_rays = true,
-            "--obstacles" => o.scene.polygon_count = parse_num(&value()?, 0.0, 1e6)? as usize,
+            "--obstacles" => o.scene.polygon_count = parse_num(&value()?, 0.0, 200_000.0)? as usize,
             "--world" => {
                 let size = parse_num(&value()?, 100.0, 1e5)?;
                 (o.scene.width, o.scene.height) = (size, size);
+                o.keep_density = false;
             }
             "--seed" => o.scene.seed = value()?.parse().map_err(|_| "--seed must be a whole number")?,
             "--window" => {
@@ -138,6 +143,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Parsed, String> 
             other => return Err(format!("unknown option {other}")),
         }
     }
+    if o.keep_density {
+        let size = app::density_world_size(o.scene.polygon_count);
+        (o.scene.width, o.scene.height) = (size, size);
+    }
     Ok(Parsed::Run(o))
 }
 
@@ -155,7 +164,24 @@ fn parse_point(s: &str) -> Result<Vec2, String> {
     Ok(Vec2::new(parse_num(x, -1e6, 1e6)?, parse_num(y, -1e6, 1e6)?))
 }
 
+/// Release builds on Windows are GUI apps with no console of their own. Attach to the
+/// console that started the app, if any, so `--help`, `--version` and errors show up.
+#[cfg(all(windows, not(debug_assertions)))]
+#[allow(unsafe_code)]
+fn attach_parent_console() {
+    use windows_sys::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
+    // SAFETY: AttachConsole takes a process id by value and touches no memory we own.
+    // It fails harmlessly when there is no parent console (for example from Explorer).
+    unsafe {
+        AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+}
+
+#[cfg(not(all(windows, not(debug_assertions))))]
+fn attach_parent_console() {}
+
 fn main() -> ExitCode {
+    attach_parent_console();
     let options = match parse_args(std::env::args().skip(1)) {
         Ok(Parsed::Run(o)) => o,
         Ok(Parsed::Exit(code)) => return code,
@@ -164,6 +190,15 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+
+    if options.screenshot.is_some() {
+        // A window that never becomes visible never renders, so do not wait forever.
+        std::thread::spawn(|| {
+            std::thread::sleep(std::time::Duration::from_secs(60));
+            eprintln!("error: timed out waiting for the window to render; keep it visible on screen");
+            std::process::exit(1);
+        });
+    }
 
     let icon = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon.png")).ok();
     let mut viewport = egui::ViewportBuilder::default()
@@ -225,6 +260,15 @@ mod tests {
         assert_eq!(o.view.fov_deg, 120.0);
         assert_eq!((o.scene.width, o.scene.height), (5000.0, 5000.0));
         assert!(o.view.show_rays);
+    }
+
+    #[test]
+    fn world_grows_with_obstacles_unless_given() {
+        let o = parse(&["--obstacles", "2000"]).unwrap();
+        assert_eq!((o.scene.width, o.scene.height), (4000.0, 4000.0));
+        let o = parse(&["--obstacles", "2000", "--world", "1000"]).unwrap();
+        assert_eq!(o.scene.width, 1000.0);
+        assert_eq!(parse(&[]).unwrap().scene.width, 2000.0);
     }
 
     #[test]

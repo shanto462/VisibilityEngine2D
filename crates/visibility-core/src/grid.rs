@@ -85,22 +85,10 @@ impl UniformGrid {
         grid
     }
 
-    /// Side length of one cell.
-    #[inline]
-    pub fn cell_size(&self) -> f64 {
-        self.cell
-    }
-
     /// Number of (columns, rows).
     #[inline]
     pub fn dims(&self) -> (usize, usize) {
         (self.cols, self.rows)
-    }
-
-    /// Total number of (cell, item) references.
-    #[inline]
-    pub fn reference_count(&self) -> usize {
-        self.items.len()
     }
 
     #[inline]
@@ -270,12 +258,6 @@ impl Stamps {
             *slot = self.epoch;
             true
         }
-    }
-
-    /// Was `id` marked in the current epoch?
-    #[inline]
-    pub fn is_marked(&self, id: u32) -> bool {
-        self.marks[id as usize] == self.epoch
     }
 }
 

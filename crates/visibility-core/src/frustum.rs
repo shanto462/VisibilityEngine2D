@@ -107,12 +107,13 @@ pub fn frustum_cull(scene: &Scene, cone: &ViewCone) -> FrustumResult {
     if sector.empty {
         return FrustumResult::default();
     }
-    let mut stamps = scene.new_stamps();
     let mut candidates = Vec::new();
-    scene.for_each_polygon_near(&cone.aabb(), &mut stamps, |id| {
-        if scene.polygon(id).aabb.distance_sq_to(cone.origin) <= sector.r2 {
-            candidates.push(id);
-        }
+    scene.with_stamps(|stamps| {
+        scene.for_each_polygon_near(&cone.aabb(), stamps, |id| {
+            if scene.polygon(id).aabb.distance_sq_to(cone.origin) <= sector.r2 {
+                candidates.push(id);
+            }
+        });
     });
 
     let test = |&id: &u32| sector.intersects_polygon(scene.polygon_vertices(id));

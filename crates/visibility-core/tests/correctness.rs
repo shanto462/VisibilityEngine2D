@@ -313,6 +313,59 @@ fn viewer_inside_obstacle_sees_nothing() {
 }
 
 #[test]
+fn viewer_on_an_edge_or_corner_is_blocked() {
+    let scene = Scene::new(100.0, 100.0, [square(10.0, 10.0, 10.0, 10.0)]);
+    for viewer in [Vec2::new(15.0, 10.0), Vec2::new(10.0, 10.0), Vec2::new(20.0, 13.0)] {
+        let vis = compute_visibility(&scene, &ViewCone::full(viewer, 100.0), &opts());
+        assert!(
+            vis.blocked && vis.polygon.is_empty(),
+            "viewer {viewer:?} stands on the obstacle"
+        );
+    }
+}
+
+#[test]
+fn corners_on_one_ray_are_all_checked() {
+    // Two corners exactly in line with the viewer, one per obstacle, both visible.
+    let a = PolygonDesc::new(vec![Vec2::new(10.0, 0.0), Vec2::new(20.0, 5.0), Vec2::new(15.0, 8.0)]);
+    let b = PolygonDesc::new(vec![Vec2::new(30.0, 0.0), Vec2::new(35.0, -8.0), Vec2::new(40.0, -5.0)]);
+    let scene = Scene::new(100.0, 100.0, [a, b]);
+    let vis = compute_visibility(
+        &scene,
+        &ViewCone::full(Vec2::ZERO, 80.0),
+        &VisibilityOptions {
+            collect_rays: true,
+            ..opts()
+        },
+    );
+    for corner in [Vec2::new(10.0, 0.0), Vec2::new(30.0, 0.0)] {
+        assert!(vis.polygon.contains(&corner), "corner {corner:?} missing from outline");
+        assert!(
+            vis.rays.iter().any(|r| r.target == corner && r.visible),
+            "no visible ray to {corner:?}"
+        );
+    }
+    check_radial(&scene, &ViewCone::full(Vec2::ZERO, 80.0), 5_000);
+}
+
+#[test]
+fn bad_arc_tolerance_still_gives_a_round_outline() {
+    let scene = Scene::new(100.0, 100.0, []);
+    for tolerance in [0.0, -1.0, f64::NAN] {
+        let options = VisibilityOptions {
+            arc_tolerance: tolerance,
+            ..opts()
+        };
+        let vis = compute_visibility(&scene, &ViewCone::full(Vec2::new(50.0, 50.0), 10.0), &options);
+        assert!(
+            (vis.area() - PI * 100.0).abs() < 0.01,
+            "tolerance {tolerance}: area {}",
+            vis.area()
+        );
+    }
+}
+
+#[test]
 fn debug_rays_mark_hidden_vertices() {
     let scene = Scene::new(
         400.0,

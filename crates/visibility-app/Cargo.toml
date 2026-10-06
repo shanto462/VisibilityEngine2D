@@ -18,6 +18,9 @@ eframe.workspace = true
 image.workspace = true
 visibility-core.workspace = true
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+
 [build-dependencies]
 winresource = "0.1"
 

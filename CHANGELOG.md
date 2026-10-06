@@ -24,6 +24,7 @@ macOS.
   rays toward obstacle corners in shadow casting and occlusion modes, live viewer
   dragging, and keyboard shortcuts.
 - Adjustable range, number of obstacles (up to 200,000), world size and random seed.
+  By default the world grows with the obstacle count, keeping the original density.
 - Command-line options for every setting, plus `--screenshot` for scripted images.
 - Release binaries for Windows (x64, ARM64), macOS (Apple Silicon, Intel) and Linux
   (x64) with SHA-256 checksums and build provenance attestations.

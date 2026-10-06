@@ -17,7 +17,8 @@ image = { version = "0.25.10", default-features = false, features = ["png"] }
 rayon = "1.12.0"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# The library forbids unsafe code outright; the app allows one audited Windows call.
+unsafe_code = "deny"
 missing_docs = "warn"
 
 [workspace.lints.clippy]

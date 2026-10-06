@@ -55,6 +55,8 @@ pub struct VisibilityApp {
     frame_ms: f32,
     drag: Drag,
     show_panel: bool,
+    /// The world size follows the obstacle count.
+    keep_density: bool,
     screenshot: Option<Screenshot>,
 }
 
@@ -87,6 +89,7 @@ impl VisibilityApp {
             frame_ms: 0.0,
             drag: Drag::None,
             show_panel: !options.hide_panel,
+            keep_density: options.keep_density,
             screenshot: options.screenshot.map(|path| Screenshot { path, frames: 0 }),
         })
     }
@@ -220,7 +223,8 @@ impl VisibilityApp {
             ui.separator();
             ui.monospace(format!("Obstacles: {}", self.scene.polygons().len()));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.monospace(format!("{:.1} ms/frame", self.frame_ms));
+                ui.monospace(format!("UI {:.1} ms", self.frame_ms))
+                    .on_hover_text("CPU time to build each frame's interface (smoothed)");
             });
         });
     }
@@ -274,8 +278,17 @@ impl VisibilityApp {
             );
             self.pending_config.polygon_count = count as usize;
             apply |= committed(&r);
-            let mut size = self.pending_config.width;
-            let r = ui.add(
+            let r = ui.checkbox(&mut self.keep_density, "Keep density").on_hover_text(
+                "Grow the world with the obstacle count (2000 x 2000 for 500), so obstacles do not pile up.",
+            );
+            apply |= r.changed();
+            let mut size = if self.keep_density {
+                density_world_size(self.pending_config.polygon_count)
+            } else {
+                self.pending_config.width
+            };
+            let r = ui.add_enabled(
+                !self.keep_density,
                 egui::Slider::new(&mut size, 500.0..=40_000.0)
                     .logarithmic(true)
                     .integer()
@@ -482,7 +495,7 @@ impl VisibilityApp {
                 geometry: Arc::clone(&self.geometry),
                 scale,
                 offset,
-                line_color: colors.outline,
+                line_color: outline_for_zoom(colors.outline, cam.zoom),
             },
         ));
 
@@ -744,6 +757,20 @@ fn format_us(us: f64) -> String {
     } else {
         format!("{us:.1} µs")
     }
+}
+
+/// Fades obstacle outlines out when zoomed far out, where one-pixel lines would hide
+/// the obstacle colors: full strength from 50% zoom, gone at 5%.
+fn outline_for_zoom(color: [f32; 4], zoom: f64) -> [f32; 4] {
+    let fade = ((zoom - 0.05) / 0.45).clamp(0.0, 1.0) as f32;
+    [color[0], color[1], color[2], color[3] * fade]
+}
+
+/// World side length that keeps the original density of 500 obstacles per 2000 x 2000.
+pub fn density_world_size(obstacles: usize) -> f64 {
+    (2000.0 * (obstacles as f64 / 500.0).sqrt())
+        .round()
+        .clamp(500.0, 40_000.0)
 }
 
 /// The free point closest to the world center (on a coarse spiral), so the first view is not empty.

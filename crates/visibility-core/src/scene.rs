@@ -1,7 +1,14 @@
 //! Obstacle storage: polygons in one flat vertex array plus a uniform grid.
 
 use crate::geom::{Aabb, Vec2, point_in_polygon, ray_segment, signed_area};
+use std::cell::RefCell;
+
 use crate::grid::{Stamps, UniformGrid};
+
+thread_local! {
+    /// Visited-set reused by queries on this thread, so a query never allocates one per call.
+    static SCRATCH: RefCell<Stamps> = RefCell::new(Stamps::default());
+}
 
 /// One obstacle. Its vertices are `Scene::vertices()[first..first + len]`.
 ///
@@ -93,7 +100,10 @@ pub struct Scene {
 }
 
 impl Scene {
-    /// Builds a scene from polygons. Polygons with fewer than 3 points are skipped.
+    /// Builds a scene from polygons. Polygon `i` of `descs` gets id `i`.
+    ///
+    /// Polygons with fewer than 3 points keep their id (so ids always match the input
+    /// order) but have an empty bounding box and never block anything.
     pub fn new(width: f64, height: f64, descs: impl IntoIterator<Item = PolygonDesc>) -> Self {
         let mut vertices = Vec::new();
         let mut edge_owner = Vec::new();
@@ -102,18 +112,22 @@ impl Scene {
 
         for desc in descs {
             let mut pts = desc.points;
-            if pts.len() < 3 {
-                continue;
-            }
             if signed_area(&pts) < 0.0 {
                 pts.reverse();
             }
             let id = polygons.len() as u32;
-            let aabb = Aabb::from_points(&pts);
-            bounds = bounds.union(aabb);
+            // Degenerate polygons stay out of the grid, so no query ever visits them.
+            let aabb = if pts.len() >= 3 {
+                Aabb::from_points(&pts)
+            } else {
+                Aabb::EMPTY
+            };
+            if !aabb.is_empty() {
+                bounds = bounds.union(aabb);
+            }
             let center = desc.center.unwrap_or_else(|| {
                 let sum = pts.iter().fold(Vec2::ZERO, |acc, &p| acc + p);
-                sum * (1.0 / pts.len() as f64)
+                sum * (1.0 / pts.len().max(1) as f64)
             });
             polygons.push(Polygon {
                 first: vertices.len() as u32,
@@ -142,10 +156,14 @@ impl Scene {
 
     /// About one average obstacle per cell, capped so the grid stays under ~4M cells.
     fn pick_cell_size(boxes: &[Aabb], bounds: &Aabb) -> f64 {
-        if boxes.is_empty() {
+        let (sum, count) = boxes
+            .iter()
+            .filter(|b| !b.is_empty())
+            .fold((0.0, 0usize), |(s, n), b| (s + b.width().max(b.height()), n + 1));
+        if count == 0 {
             return bounds.width().max(bounds.height()).max(1.0);
         }
-        let mean_extent = boxes.iter().map(|b| b.width().max(b.height())).sum::<f64>() / boxes.len() as f64;
+        let mean_extent = sum / count as f64;
         let min_for_cap = (bounds.width() * bounds.height() / 4.0e6).sqrt();
         mean_extent.max(min_for_cap).max(1.0)
     }
@@ -253,6 +271,18 @@ impl Scene {
         Stamps::new(self.polygons.len())
     }
 
+    /// Runs `f` with a visited-set sized for this scene, reused across calls on the
+    /// same thread (a nested call gets a fresh one).
+    pub(crate) fn with_stamps<R>(&self, f: impl FnOnce(&mut Stamps) -> R) -> R {
+        SCRATCH.with(|cell| match cell.try_borrow_mut() {
+            Ok(mut stamps) => {
+                stamps.resize(self.polygons.len());
+                f(&mut stamps)
+            }
+            Err(_) => f(&mut self.new_stamps()),
+        })
+    }
+
     /// Polygons whose grid cells overlap `aabb` (a superset of the polygons that touch it).
     #[inline]
     pub fn for_each_polygon_near(&self, aabb: &Aabb, stamps: &mut Stamps, f: impl FnMut(u32)) {
@@ -269,8 +299,12 @@ impl Scene {
             .max()
     }
 
-    /// Nearest obstacle edge hit by the ray `origin + t * dir` with `t <= max_t`.
+    /// Line-of-sight query: the nearest obstacle edge hit by the ray `origin + t * dir`
+    /// with `t <= max_t`, found by walking the grid cells along the ray, nearest first.
     /// `dir` must be a unit vector so that `t` is a distance.
+    ///
+    /// Use it to check whether one point can see another. For whole visible regions,
+    /// [`compute_visibility`](crate::compute_visibility) is much faster than many rays.
     pub fn cast_ray(&self, origin: Vec2, dir: Vec2, max_t: f64) -> Option<RayHit> {
         let mut best_t = max_t;
         let mut best_edge = u32::MAX;
@@ -399,6 +433,18 @@ mod tests {
         assert_eq!(scene.polygon_at(Vec2::new(7.0, 7.0)), Some(1));
         assert_eq!(scene.polygon_at(Vec2::new(2.0, 2.0)), Some(0));
         assert_eq!(scene.polygon_at(Vec2::new(50.0, 50.0)), None);
+    }
+
+    #[test]
+    fn degenerate_polygons_keep_ids_and_never_block() {
+        let line = PolygonDesc::new(vec![Vec2::new(0.0, 5.0), Vec2::new(100.0, 5.0)]);
+        let scene = Scene::new(200.0, 200.0, [line, square(50.0, 0.0, 10.0)]);
+        assert_eq!(scene.polygons().len(), 2);
+        let hit = scene
+            .cast_ray(Vec2::new(0.0, 5.0), Vec2::new(1.0, 0.0), 1000.0)
+            .unwrap();
+        assert_eq!(scene.edge_owner(hit.edge), 1, "the square keeps id 1");
+        assert_eq!(scene.polygon_at(Vec2::new(55.0, 5.0)), Some(1));
     }
 
     #[test]
